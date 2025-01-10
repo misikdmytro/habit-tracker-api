@@ -1,0 +1,244 @@
+openapi: 3.0.3
+info:
+  title: Habit Tracker API
+  description: API for managing habits, tracking completion, and retrieving statistics.
+  version: 1.0.0
+paths:
+  /habits:
+    post:
+      summary: Create a new habit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                frequency:
+                  type: string
+                  enum: [daily, weekly, monthly]
+                category:
+                  type: string
+                reminder:
+                  type: boolean
+              required: [name, frequency]
+      responses:
+        "201":
+          description: Habit created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+    get:
+      summary: Retrieve all habits
+      parameters:
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+        - name: frequency
+          in: query
+          description: Filter by frequency
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+        - name: page
+          in: query
+          description: Page number (1-based index)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: List of habits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    frequency:
+                      type: string
+                    category:
+                      type: string
+  /habits/{id}:
+    get:
+      summary: Get details of a specific habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Habit details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  frequency:
+                    type: string
+                  category:
+                    type: string
+    put:
+      summary: Update a specific habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                frequency:
+                  type: string
+                  enum: [daily, weekly, monthly]
+                category:
+                  type: string
+      responses:
+        "200":
+          description: Habit updated successfully
+    delete:
+      summary: Delete a specific habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Habit deleted successfully
+  /habits/{id}/track:
+    post:
+      summary: Mark a habit as completed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          description: Completion marked successfully
+    delete:
+      summary: Undo a completion record for a specific date
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "204":
+          description: Completion record deleted successfully
+  /habits/{id}/progress:
+    get:
+      summary: Retrieve progress details of a habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Progress details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  streak:
+                    type: integer
+                  completion_rate:
+                    type: number
+                    format: float
+  /stats:
+    get:
+      summary: Get statistics for all habits
+      responses:
+        "200":
+          description: Overall statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_habits:
+                    type: integer
+                  overall_completion_rate:
+                    type: number
+                    format: float
+  /stats/{id}:
+    get:
+      summary: Get detailed statistics for a specific habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Detailed statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_completions:
+                    type: integer
+                  streak:
+                    type: integer
+                  missed_days:
+                    type: integer

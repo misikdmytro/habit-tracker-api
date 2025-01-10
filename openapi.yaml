@@ -21,8 +21,6 @@ paths:
                   enum: [daily, weekly, monthly]
                 category:
                   type: string
-                reminder:
-                  type: boolean
               required: [name, frequency]
       responses:
         "201":

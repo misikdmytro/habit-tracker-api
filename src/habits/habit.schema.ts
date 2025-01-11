@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { HabitFrequency } from '../types/habit.type';
+import { HabitFrequency } from './habit.type';
 
 export type HabitDocument = HydratedDocument<Habit>;
 

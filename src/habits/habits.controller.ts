@@ -1,6 +1,14 @@
-import { Body, Controller, HttpCode, Inject, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { CreateHabitDto } from './../types/habit.type';
+import { CreateHabitDto, GetHabitsDto } from './habit.type';
 import { HabitsService } from './habits.service';
 
 @Controller('habits')
@@ -24,10 +32,30 @@ export class HabitsController {
   })
   @ApiOperation({ summary: 'Create a new habit' })
   async create(@Body() dto: CreateHabitDto) {
-    const id = await this.habitsService.create(dto);
+    const result = await this.habitsService.create(dto);
+    return result;
+  }
 
-    return {
-      id: id,
-    };
+  @Get()
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Habit list has been successfully retrieved.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error.',
+  })
+  @ApiOperation({ summary: 'Get all habits' })
+  async getAll(
+    @Query()
+    dto: GetHabitsDto = { page: 1, limit: 10 },
+  ) {
+    const result = await this.habitsService.getAll(dto);
+    return result;
   }
 }

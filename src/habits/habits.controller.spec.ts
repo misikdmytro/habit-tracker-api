@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { HabitsController } from './habits.controller';
-import { HabitsService } from './habits.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { Habit } from './../schemas/habit.schema';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
 import { HabitFrequency } from './../types/habit.type';
+import { Habit } from './habit.schema';
+import { HabitsController } from './habits.controller';
+import { HabitsService } from './habits.service';
 
 describe('HabitsController', () => {
   let service: HabitsService;

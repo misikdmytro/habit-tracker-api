@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { HabitsService } from './habits.service';
-import { HabitsController } from './habits.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Habit, HabitSchema } from './../schemas/habit.schema';
+import { Habit, HabitSchema } from './habit.schema';
+import { HabitsController } from './habits.controller';
+import { HabitsService } from './habits.service';
 
 @Module({
   imports: [

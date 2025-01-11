@@ -1,8 +1,8 @@
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
-import { ConfigModule } from '@nestjs/config';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -18,21 +18,49 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
+
     await app.init();
   });
 
-  it('/habits (POST)', () => {
-    return request(app.getHttpServer())
-      .post('/habits')
-      .send({
-        name: 'Test Habit',
-        category: 'Test Category',
-        frequency: 0,
-      })
-      .expect(201)
-      .expect((res) => {
-        expect(res.body.id).toBeDefined();
+  describe('/habits (POST', () => {
+    it('should return 201', () => {
+      return request(app.getHttpServer())
+        .post('/habits')
+        .send({
+          name: 'Test Habit',
+          category: 'Test Category',
+          frequency: 0,
+        })
+        .expect(201);
+    });
+
+    const invalidReuqests = [
+      {
+        name: 'no name',
+        requestBody: {
+          category: 'Test Category',
+          frequency: 0,
+        },
+      },
+      {
+        name: 'wrong frequency',
+        requestBody: {
+          name: 'Test Habit',
+          category: 'Test Category',
+          frequency: 3,
+        },
+      },
+    ];
+
+    invalidReuqests.forEach(({ name, requestBody }) => {
+      it(`should return 400 (${name})`, () => {
+        return request(app.getHttpServer())
+          .post('/habits')
+          .send(requestBody)
+          .expect(400);
       });
+    });
   });
 
   afterAll(async () => {

@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { HabitFrequency } from './../types/habit.type';
+import { HabitFrequency } from '../types/habit.type';
 
 export type HabitDocument = HydratedDocument<Habit>;
 
@@ -9,10 +9,10 @@ export class Habit {
   @Prop({ required: true })
   name: string;
 
-  @Prop()
+  @Prop({ index: true })
   category: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, index: true })
   frequency: HabitFrequency;
 }
 

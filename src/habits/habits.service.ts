@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Habit, HabitDocument } from './../schemas/habit.schema';
 import { CreateHabitDto } from './../types/habit.type';
+import { Habit, HabitDocument } from './habit.schema';
 
 @Injectable()
 export class HabitsService {

@@ -5,6 +5,7 @@ import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { HabitsModule } from './habits/habits.module';
 import { StatsModule } from './stats/stats.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { StatsModule } from './stats/stats.module';
     MongooseModule.forRoot(process.env.MONGO_URI),
     HabitsModule,
     StatsModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

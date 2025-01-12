@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   HttpCode,
-  Inject,
   Param,
   Post,
   Put,
@@ -23,7 +22,7 @@ import { HabitsService } from './habits.service';
 
 @Controller('habits')
 export class HabitsController {
-  constructor(@Inject(HabitsService) private habitsService: HabitsService) {}
+  constructor(private habitsService: HabitsService) {}
 
   @Post()
   @HttpCode(201)

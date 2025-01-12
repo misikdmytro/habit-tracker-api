@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsIn, IsNotEmpty, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  Matches,
+  Max,
+  Min,
+} from 'class-validator';
 
 export enum HabitFrequency {
   DAILY = 0,
@@ -8,7 +15,11 @@ export enum HabitFrequency {
   MONTHLY = 2,
 }
 
-export const AllHabitFrequencies = Object.values(HabitFrequency);
+export const AllHabitFrequencies = [
+  HabitFrequency.DAILY,
+  HabitFrequency.WEEKLY,
+  HabitFrequency.MONTHLY,
+];
 
 export class CreateHabitDto {
   @ApiProperty({
@@ -84,14 +95,27 @@ export class GetHabitsDto {
   limit?: number;
 }
 
-export interface HabitDto {
+export class GetHabitByIdDto {
+  @ApiProperty({
+    example: 'id',
+    description: 'The ID of the habit',
+    required: true,
+  })
+  @IsNotEmpty()
+  @Matches(/^[0-9a-fA-F]{24}$/)
+  id: string;
+}
+
+export class HabitDto {
   id: string;
   name: string;
   category: string;
-  frequency: HabitFrequency;
+  frequency: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface GetHabitResponse {
+export class GetHabitResponse {
   habits: HabitDto[];
   total: number;
 }

@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import mongoose from 'mongoose';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 
@@ -24,22 +25,26 @@ describe('AppController (e2e)', () => {
   });
 
   describe('/habits (POST', () => {
-    it('should return 201', () => {
-      return request(app.getHttpServer())
+    it('should return 201', async () => {
+      const response = await request(app.getHttpServer())
         .post('/habits')
         .send({
           name: 'Test Habit',
           category: 'Test Category',
           frequency: 1,
         })
-        .expect(201)
-        .then((response) => {
-          const { id, name, category, frequency } = response.body;
-          expect(id).toBeDefined();
-          expect(name).toBe('Test Habit');
-          expect(category).toBe('Test Category');
-          expect(frequency).toBe(1);
-        });
+        .expect(201);
+
+      const { id, name, category, frequency, createdAt, updatedAt } =
+        response.body;
+
+      expect(id).toBeDefined();
+      expect(name).toBe('Test Habit');
+      expect(category).toBe('Test Category');
+      expect(frequency).toBe('weekly');
+      expect(createdAt).toBeDefined();
+      expect(updatedAt).toBeDefined();
+      expect(createdAt).toBe(updatedAt);
     });
 
     const invalidReuqests = [
@@ -70,44 +75,40 @@ describe('AppController (e2e)', () => {
       },
     ];
 
-    invalidReuqests.forEach(({ name, requestBody }) => {
-      it(`should return 400 (${name})`, () => {
-        return request(app.getHttpServer())
+    invalidReuqests.forEach(({ name, requestBody, responseBody }) => {
+      it(`should return 400 (${name})`, async () => {
+        const response = await request(app.getHttpServer())
           .post('/habits')
           .send(requestBody)
-          .expect(400)
-          .then((response) => {
-            const { message, error, statusCode } = response.body;
-            expect(message).toBeDefined();
-            expect(error).toBe('Bad Request');
-            expect(statusCode).toBe(400);
-          });
+          .expect(400);
+
+        expect(response.body).toEqual(responseBody);
       });
     });
   });
 
   describe('/habits (GET)', () => {
-    it('should return 200', () => {
-      return request(app.getHttpServer())
+    it('should return 200', async () => {
+      const response = await request(app.getHttpServer())
         .get('/habits')
-        .expect(200)
-        .then((response) => {
-          const { habits, total } = response.body;
-          expect(habits).toBeDefined();
-          expect(total).toBeDefined();
-        });
+        .expect(200);
+
+      const { habits, total } = response.body;
+
+      expect(habits).toBeDefined();
+      expect(total).toBeDefined();
     });
 
-    it('should return 200 with query', () => {
-      return request(app.getHttpServer())
+    it('should return 200 with query', async () => {
+      const response = await request(app.getHttpServer())
         .get('/habits')
         .query({ category: 'Test Category', frequency: 1 })
-        .expect(200)
-        .then((response) => {
-          const { habits, total } = response.body;
-          expect(habits).toBeDefined();
-          expect(total).toBeDefined();
-        });
+        .expect(200);
+
+      const { habits, total } = response.body;
+
+      expect(habits).toBeDefined();
+      expect(total).toBeDefined();
     });
 
     const invalidReuqests = [
@@ -124,7 +125,7 @@ describe('AppController (e2e)', () => {
         name: 'wrong page number',
         query: { page: 0 },
         responseBody: {
-          message: ['page must be greater than or equal to 1'],
+          message: ['page must not be less than 1'],
           error: 'Bad Request',
           statusCode: 400,
         },
@@ -133,7 +134,7 @@ describe('AppController (e2e)', () => {
         name: 'less than minimum limit',
         query: { limit: 0 },
         responseBody: {
-          message: ['limit must be greater than or equal to 1'],
+          message: ['limit must not be less than 1'],
           error: 'Bad Request',
           statusCode: 400,
         },
@@ -142,26 +143,106 @@ describe('AppController (e2e)', () => {
         name: 'more than maximum limit',
         query: { limit: 101 },
         responseBody: {
-          message: ['limit must be less than or equal to 100'],
+          message: ['limit must not be greater than 100'],
           error: 'Bad Request',
           statusCode: 400,
         },
       },
     ];
 
-    invalidReuqests.forEach(({ name, query }) => {
-      it(`should return 400 (${name})`, () => {
-        return request(app.getHttpServer())
+    invalidReuqests.forEach(({ name, query, responseBody }) => {
+      it(`should return 400 (${name})`, async () => {
+        const response = await request(app.getHttpServer())
           .get('/habits')
           .query(query)
-          .expect(400)
-          .then((response) => {
-            const { message, error, statusCode } = response.body;
-            expect(message).toBeDefined();
-            expect(error).toBe('Bad Request');
-            expect(statusCode).toBe(400);
-          });
+          .expect(400);
+
+        expect(response.body).toEqual(responseBody);
       });
+    });
+  });
+
+  describe('/habits/:id (GET)', () => {
+    it('should return 404', async () => {
+      const objectId = new mongoose.Types.ObjectId();
+      const response = await request(app.getHttpServer())
+        .get(`/habits/${objectId.toHexString()}`)
+        .expect(404);
+
+      const { message } = response.body;
+
+      expect(message).toBe('Habit not found');
+    });
+
+    const invalidRequests = [
+      {
+        name: 'invalid id',
+        id: 'invalid',
+        responseBody: {
+          message: ['id must match /^[0-9a-fA-F]{24}$/ regular expression'],
+          error: 'Bad Request',
+          statusCode: 400,
+        },
+      },
+    ];
+
+    invalidRequests.forEach(({ name, id, responseBody }) => {
+      it(`should return 400 (${name})`, async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/habits/${id}`)
+          .expect(400);
+
+        expect(response.body).toEqual(responseBody);
+      });
+    });
+  });
+
+  describe('combined', () => {
+    it('should create a habit and get it', async () => {
+      const createResponse = await request(app.getHttpServer())
+        .post('/habits')
+        .send({
+          name: 'Test Habit',
+          category: 'Test Category',
+          frequency: 1,
+        })
+        .expect(201);
+
+      const { id, createdAt, updatedAt } = createResponse.body;
+
+      const getResponse = await request(app.getHttpServer())
+        .get(`/habits/${id}`)
+        .expect(200);
+
+      const { name, category, frequency } = getResponse.body;
+
+      expect(name).toBe('Test Habit');
+      expect(category).toBe('Test Category');
+      expect(frequency).toBe('weekly');
+
+      const getAllResponse1 = await request(app.getHttpServer())
+        .get('/habits')
+        .query({ category: 'Test Category', frequency: 1 })
+        .expect(200);
+
+      const { habits: habits1 } = getAllResponse1.body;
+      expect(habits1.length).toBeGreaterThanOrEqual(1);
+
+      const getAllResponse2 = await request(app.getHttpServer())
+        .get('/habits')
+        .query({ page: 1, limit: 1 })
+        .expect(200);
+
+      const { habits: habits2 } = getAllResponse2.body;
+
+      expect(habits2.length).toBe(1);
+      const habit = habits2[0];
+      expect(habit.name).toBe('Test Habit');
+      expect(habit.category).toBe('Test Category');
+      expect(habit.frequency).toBe('weekly');
+      expect(habit.id).toBe(id);
+      expect(habit.createdAt).toBe(createdAt);
+      expect(habit.updatedAt).toBe(updatedAt);
     });
   });
 

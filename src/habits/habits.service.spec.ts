@@ -1,5 +1,6 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Habit } from './habit.schema';
 import { HabitFrequency } from './habit.type';
 import { HabitsService } from './habits.service';
@@ -9,12 +10,23 @@ describe('HabitsService', () => {
   const mockHabitModel: any = jest.fn();
 
   beforeEach(async () => {
+    const mockLogger = {
+      debug: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      log: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HabitsService,
         {
           provide: getModelToken(Habit.name),
           useValue: mockHabitModel,
+        },
+        {
+          provide: WINSTON_MODULE_PROVIDER,
+          useValue: mockLogger,
         },
       ],
     }).compile();
@@ -49,7 +61,7 @@ describe('HabitsService', () => {
     expect(result.id).toBe(id);
     expect(result.name).toBe(habitDto.name);
     expect(result.category).toBe(habitDto.category);
-    expect(result.frequency).toBe(habitDto.frequency);
+    expect(result.frequency).toBe('daily');
   });
 
   it('should get all habits', async () => {
@@ -80,6 +92,7 @@ describe('HabitsService', () => {
     mockHabitModel.find = jest.fn().mockReturnValue(habitModel);
     habitModel.skip = jest.fn().mockReturnValue(habitModel);
     habitModel.limit = jest.fn().mockReturnValue(habitModel);
+    habitModel.sort = jest.fn().mockReturnValue(habitModel);
     habitModel.exec = jest.fn().mockReturnValue(habits);
 
     const countDocumentsModel: any = {};

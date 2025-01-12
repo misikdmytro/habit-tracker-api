@@ -18,17 +18,18 @@ export class HabitsService {
   ) {}
 
   async create(dto: CreateHabitDto): Promise<HabitDto> {
-    this.logger.debug({
+    this.logger.log({
+      level: 'debug',
       message: 'Creating a new habit',
-      data: dto,
     });
 
     const createdHabit = new this.habitModel(dto);
     const result = await createdHabit.save();
 
-    this.logger.debug({
+    this.logger.log({
+      level: 'info',
       message: 'Created a new habit',
-      data: result,
+      id: result._id.toHexString(),
     });
 
     return this.mapToDto(result);
@@ -37,7 +38,8 @@ export class HabitsService {
   async getAll(
     params: GetHabitsDto = { page: 1, limit: 10 },
   ): Promise<GetHabitResponse> {
-    this.logger.debug({
+    this.logger.log({
+      level: 'debug',
       message: 'Getting all habits',
       data: params,
     });
@@ -47,25 +49,62 @@ export class HabitsService {
       .find(query)
       .skip((page - 1) * limit)
       .limit(limit)
+      .sort({ createdAt: -1 })
       .exec();
 
     const total = await this.habitModel.countDocuments(query).exec();
     const habits = result.map(this.mapToDto);
 
-    this.logger.debug({
+    this.logger.log({
+      level: 'info',
       message: 'Got all habits',
-      data: { habits, total },
+      data: { total },
     });
 
     return { habits, total: total };
   }
 
+  async get(id: string): Promise<HabitDto> {
+    this.logger.log({
+      level: 'debug',
+      message: 'Getting a habit',
+      id,
+    });
+
+    const habit = await this.habitModel.findById(id).exec();
+    if (!habit) {
+      this.logger.log({
+        level: 'info',
+        message: 'Habit not found',
+        data: id,
+      });
+
+      return null;
+    }
+
+    this.logger.log({
+      level: 'info',
+      message: 'Got a habit',
+      id,
+    });
+
+    return this.mapToDto(habit);
+  }
+
   private mapToDto(habit: HabitDocument): HabitDto {
+    const frequencies = {
+      0: 'daily',
+      1: 'weekly',
+      2: 'monthly',
+    };
+
     return {
       id: habit._id.toHexString(),
       name: habit.name,
       category: habit.category,
-      frequency: habit.frequency,
+      frequency: frequencies[habit.frequency],
+      createdAt: habit.createdAt,
+      updatedAt: habit.updatedAt,
     };
   }
 }

@@ -14,6 +14,12 @@ export class Habit {
 
   @Prop({ required: true, index: true })
   frequency: HabitFrequency;
+
+  @Prop({ default: Date.now })
+  createdAt: Date;
+
+  @Prop({ default: Date.now })
+  updatedAt: Date;
 }
 
 export const HabitSchema = SchemaFactory.createForClass(Habit);

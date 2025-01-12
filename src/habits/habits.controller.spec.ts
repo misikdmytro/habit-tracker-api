@@ -1,6 +1,7 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Habit } from './habit.schema';
 import { HabitDto, HabitFrequency } from './habit.type';
 import { HabitsController } from './habits.controller';
@@ -11,6 +12,13 @@ describe('HabitsController', () => {
   let controller: HabitsController;
 
   beforeEach(async () => {
+    const mockLogger = {
+      debug: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      log: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HabitsController],
       providers: [
@@ -18,6 +26,10 @@ describe('HabitsController', () => {
         {
           provide: getModelToken(Habit.name),
           useValue: Model,
+        },
+        {
+          provide: WINSTON_MODULE_PROVIDER,
+          useValue: mockLogger,
         },
       ],
     }).compile();
@@ -38,15 +50,21 @@ describe('HabitsController', () => {
     };
 
     const id = 'id';
-    jest
-      .spyOn(service, 'create')
-      .mockImplementation(async () => ({ id, ...habitDto }));
+    jest.spyOn(service, 'create').mockImplementation(async () => ({
+      id,
+      ...habitDto,
+      frequency: 'daily',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
 
     const result = await controller.create(habitDto);
     expect(result.id).toBe(id);
     expect(result.name).toBe(habitDto.name);
     expect(result.category).toBe(habitDto.category);
-    expect(result.frequency).toBe(habitDto.frequency);
+    expect(result.frequency).toBe('daily');
+    expect(result.createdAt).toBeDefined();
+    expect(result.updatedAt).toBeDefined();
   });
 
   it('should get all habits', async () => {
@@ -55,13 +73,17 @@ describe('HabitsController', () => {
         id: 'id1',
         name: 'Test Habit 1',
         category: 'Test Category 1',
-        frequency: HabitFrequency.DAILY,
+        frequency: 'daily',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         id: 'id2',
         name: 'Test Habit 2',
         category: 'Test Category 2',
-        frequency: HabitFrequency.WEEKLY,
+        frequency: 'weekly',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ];
 

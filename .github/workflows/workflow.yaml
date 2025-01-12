@@ -30,6 +30,12 @@ jobs:
         run: docker compose up -d
       - name: Create test config
         run: echo "MONGO_URI=mongodb://localhost:27017/habit-tracker" > test/.env
+      - name: Wait for MongoDB
+        run: |
+          until curl -s http://localhost:27017/; do
+            echo "Waiting for MongoDB to be ready..."
+            sleep 2
+          done
       - name: Run E2E tests
         run: pnpm run test:e2e
       - name: Down Docker Compose

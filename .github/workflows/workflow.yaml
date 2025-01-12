@@ -1,0 +1,25 @@
+name: App CI
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run test
+      - run: docker compose up -d
+      - run: echo "MONGO_URI=mongodb://localhost:27017/habit-tracker" > test/.env
+      - run: pnpm run test:e2e
+      - run: docker-compose down --volumes
+        if: always()

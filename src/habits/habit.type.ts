@@ -106,6 +106,35 @@ export class GetHabitByIdDto {
   id: string;
 }
 
+export class UpdateHabitByIdDto {
+  @ApiProperty({
+    example: 'Drink water',
+    description: 'The name of the habit',
+    required: false,
+  })
+  @IsOptional()
+  name?: string;
+
+  @ApiProperty({
+    example: 'health',
+    description: 'The category of the habit',
+    required: false,
+  })
+  @IsOptional()
+  category?: string;
+
+  @ApiProperty({
+    example: HabitFrequency.DAILY,
+    description: 'The frequency of the habit',
+    required: false,
+    enum: HabitFrequency,
+  })
+  @Type(() => Number)
+  @IsOptional()
+  @IsIn(AllHabitFrequencies)
+  frequency?: HabitFrequency;
+}
+
 export class HabitDto {
   id: string;
   name: string;

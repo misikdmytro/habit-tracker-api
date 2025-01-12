@@ -8,6 +8,7 @@ import {
   GetHabitResponse,
   GetHabitsDto,
   HabitDto,
+  UpdateHabitByIdDto,
 } from './habit.type';
 
 @Injectable()
@@ -23,7 +24,12 @@ export class HabitsService {
       message: 'Creating a new habit',
     });
 
-    const createdHabit = new this.habitModel(dto);
+    const now = new Date();
+    const createdHabit = new this.habitModel({
+      ...dto,
+      createdAt: now,
+      updatedAt: now,
+    });
     const result = await createdHabit.save();
 
     this.logger.log({
@@ -89,6 +95,63 @@ export class HabitsService {
     });
 
     return this.mapToDto(habit);
+  }
+
+  async update(id: string, dto: UpdateHabitByIdDto): Promise<HabitDto> {
+    this.logger.log({
+      level: 'debug',
+      message: 'Updating a habit',
+      id,
+    });
+
+    const habit = await this.habitModel
+      .findByIdAndUpdate(id, dto, { new: true })
+      .exec();
+
+    if (!habit) {
+      this.logger.log({
+        level: 'info',
+        message: 'Habit not found',
+        id,
+      });
+
+      return null;
+    }
+
+    this.logger.log({
+      level: 'info',
+      message: 'Updated a habit',
+      id,
+    });
+
+    return this.mapToDto(habit);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    this.logger.log({
+      level: 'debug',
+      message: 'Deleting a habit',
+      id,
+    });
+
+    const result = await this.habitModel.findByIdAndDelete(id).exec();
+    if (!result) {
+      this.logger.log({
+        level: 'info',
+        message: 'Habit not found',
+        id,
+      });
+
+      return false;
+    }
+
+    this.logger.log({
+      level: 'info',
+      message: 'Deleted a habit',
+      id,
+    });
+
+    return true;
   }
 
   private mapToDto(habit: HabitDocument): HabitDto {

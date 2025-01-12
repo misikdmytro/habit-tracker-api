@@ -1,6 +1,7 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { v4 as uuidv4 } from 'uuid';
 import { Habit } from './habit.schema';
 import { HabitFrequency } from './habit.type';
 import { HabitsService } from './habits.service';
@@ -40,12 +41,12 @@ describe('HabitsService', () => {
 
   it('should create a new habit', async () => {
     const habitDto = {
-      name: 'Test Habit',
-      category: 'Test Category',
+      name: uuidv4(),
+      category: uuidv4(),
       frequency: HabitFrequency.DAILY,
     };
 
-    const id = 'id';
+    const id = uuidv4();
     const save = {
       _id: {
         toHexString() {
@@ -69,21 +70,21 @@ describe('HabitsService', () => {
       {
         _id: {
           toHexString() {
-            return 'id1';
+            return uuidv4();
           },
         },
-        name: 'Test Habit 1',
-        category: 'Test Category 1',
+        name: uuidv4(),
+        category: uuidv4(),
         frequency: HabitFrequency.DAILY,
       },
       {
         _id: {
           toHexString() {
-            return 'id2';
+            return uuidv4();
           },
         },
-        name: 'Test Habit 2',
-        category: 'Test Category 2',
+        name: uuidv4(),
+        category: uuidv4(),
         frequency: HabitFrequency.WEEKLY,
       },
     ];
@@ -105,5 +106,101 @@ describe('HabitsService', () => {
 
     expect(result.habits).toHaveLength(2);
     expect(result.total).toBe(2);
+  });
+
+  it('should get a habit', async () => {
+    const habit = {
+      _id: {
+        toHexString() {
+          return uuidv4();
+        },
+      },
+      name: uuidv4(),
+      category: uuidv4(),
+      frequency: HabitFrequency.DAILY,
+    };
+
+    mockHabitModel.findById = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(habit),
+    });
+
+    const result = await service.get('id');
+
+    expect(result.id).toBeDefined();
+    expect(result.name).toBe(habit.name);
+    expect(result.category).toBe(habit.category);
+    expect(result.frequency).toBe('daily');
+  });
+
+  it('should return null when habit not found', async () => {
+    mockHabitModel.findById = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    });
+
+    const result = await service.get('id');
+
+    expect(result).toBeNull();
+  });
+
+  it('should update a habit', async () => {
+    const habitDto = {
+      name: uuidv4(),
+      category: uuidv4(),
+      frequency: HabitFrequency.DAILY,
+    };
+
+    const habit = {
+      _id: {
+        toHexString() {
+          return uuidv4();
+        },
+      },
+      ...habitDto,
+    };
+
+    mockHabitModel.findByIdAndUpdate = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(habit),
+    });
+
+    const result = await service.update('id', habitDto);
+
+    expect(result.id).toBeDefined();
+    expect(result.name).toBe(habitDto.name);
+    expect(result.category).toBe(habitDto.category);
+    expect(result.frequency).toBe('daily');
+  });
+
+  it('should return null when habit not found', async () => {
+    mockHabitModel.findByIdAndUpdate = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    });
+
+    const result = await service.update('id', {
+      name: uuidv4(),
+      category: uuidv4(),
+      frequency: HabitFrequency.DAILY,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it('should delete a habit', async () => {
+    mockHabitModel.findByIdAndDelete = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue({}),
+    });
+
+    const result = await service.delete('id');
+
+    expect(result).toBe(true);
+  });
+
+  it('should return false when habit not found', async () => {
+    mockHabitModel.findByIdAndDelete = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    });
+
+    const result = await service.delete('id');
+
+    expect(result).toBe(false);
   });
 });

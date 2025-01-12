@@ -1,13 +1,14 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import mongoose from 'mongoose';
 import * as request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+
+  const nonExistentId = '678388bbf1dcf06553bedb66';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -54,7 +55,7 @@ describe('AppController (e2e)', () => {
       {
         name: 'no name',
         requestBody: {
-          category: 'Test Category',
+          category: uuidv4(),
           frequency: 0,
         },
         responseBody: {
@@ -66,8 +67,8 @@ describe('AppController (e2e)', () => {
       {
         name: 'wrong frequency',
         requestBody: {
-          name: 'Test Habit',
-          category: 'Test Category',
+          name: uuidv4(),
+          category: uuidv4(),
           frequency: 3,
         },
         responseBody: {
@@ -105,7 +106,7 @@ describe('AppController (e2e)', () => {
     it('should return 200 with query', async () => {
       const response = await request(app.getHttpServer())
         .get('/habits')
-        .query({ category: 'Test Category', frequency: 1 })
+        .query({ category: uuidv4(), frequency: 1 })
         .expect(200);
 
       const { habits, total } = response.body;
@@ -117,7 +118,7 @@ describe('AppController (e2e)', () => {
     const invalidReuqests = [
       {
         name: 'wrong frequency',
-        query: { category: 'Test Category', frequency: 3 },
+        query: { category: uuidv4(), frequency: 3 },
         responseBody: {
           message: ['frequency must be one of the following values: 0, 1, 2'],
           error: 'Bad Request',
@@ -167,9 +168,8 @@ describe('AppController (e2e)', () => {
 
   describe('/habits/:id (GET)', () => {
     it('should return 404', async () => {
-      const objectId = new mongoose.Types.ObjectId();
       const response = await request(app.getHttpServer())
-        .get(`/habits/${objectId.toHexString()}`)
+        .get(`/habits/${nonExistentId}`)
         .expect(404);
 
       const { message } = response.body;
@@ -200,6 +200,95 @@ describe('AppController (e2e)', () => {
     });
   });
 
+  describe('/habits/:id (PUT)', () => {
+    it('should return 404', async () => {
+      const response = await request(app.getHttpServer())
+        .put(`/habits/${nonExistentId}`)
+        .send({})
+        .expect(404);
+
+      const { message } = response.body;
+
+      expect(message).toBe('Habit not found');
+    });
+
+    const invalidRequests = [
+      {
+        name: 'invalid id',
+        id: 'invalid',
+        requestBody: {
+          name: uuidv4(),
+          category: uuidv4(),
+          frequency: 1,
+        },
+        responseBody: {
+          message: ['id must match /^[0-9a-fA-F]{24}$/ regular expression'],
+          error: 'Bad Request',
+          statusCode: 400,
+        },
+      },
+      {
+        name: 'wrong frequency',
+        id: nonExistentId,
+        requestBody: {
+          name: uuidv4(),
+          category: uuidv4(),
+          frequency: 3,
+        },
+        responseBody: {
+          message: ['frequency must be one of the following values: 0, 1, 2'],
+          error: 'Bad Request',
+          statusCode: 400,
+        },
+      },
+    ];
+
+    invalidRequests.forEach(({ name, id, requestBody, responseBody }) => {
+      it(`should return 400 (${name})`, async () => {
+        const response = await request(app.getHttpServer())
+          .put(`/habits/${id}`)
+          .send(requestBody)
+          .expect(400);
+
+        expect(response.body).toEqual(responseBody);
+      });
+    });
+  });
+
+  describe('/habits/:id (DELETE)', () => {
+    it('should return 404', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/habits/${nonExistentId}`)
+        .expect(404);
+
+      const { message } = response.body;
+
+      expect(message).toBe('Habit not found');
+    });
+
+    const invalidRequests = [
+      {
+        name: 'invalid id',
+        id: 'invalid',
+        responseBody: {
+          message: ['id must match /^[0-9a-fA-F]{24}$/ regular expression'],
+          error: 'Bad Request',
+          statusCode: 400,
+        },
+      },
+    ];
+
+    invalidRequests.forEach(({ name, id, responseBody }) => {
+      it(`should return 400 (${name})`, async () => {
+        const response = await request(app.getHttpServer())
+          .delete(`/habits/${id}`)
+          .expect(400);
+
+        expect(response.body).toEqual(responseBody);
+      });
+    });
+  });
+
   describe('combined', () => {
     it('should create a habit and get it', async () => {
       const habit = {
@@ -215,11 +304,11 @@ describe('AppController (e2e)', () => {
 
       const { id, createdAt, updatedAt } = createResponse.body;
 
-      const getResponse = await request(app.getHttpServer())
+      const getResponse1 = await request(app.getHttpServer())
         .get(`/habits/${id}`)
         .expect(200);
 
-      const { name, category, frequency } = getResponse.body;
+      const { name, category, frequency } = getResponse1.body;
 
       expect(name).toBe(habit.name);
       expect(category).toBe(habit.category);
@@ -227,7 +316,7 @@ describe('AppController (e2e)', () => {
 
       const getAllResponse1 = await request(app.getHttpServer())
         .get('/habits')
-        .query({ category: 'Test Category', frequency: 1 })
+        .query({ category: habit.category, frequency: 1 })
         .expect(200);
 
       const { habits: habits1 } = getAllResponse1.body;
@@ -248,6 +337,32 @@ describe('AppController (e2e)', () => {
       expect(result.id).toBe(id);
       expect(result.createdAt).toBe(createdAt);
       expect(result.updatedAt).toBe(updatedAt);
+
+      const updateResponse = await request(app.getHttpServer())
+        .put(`/habits/${id}`)
+        .send({ name: uuidv4() })
+        .expect(200);
+
+      const { name: updatedName } = updateResponse.body;
+
+      expect(updatedName).not.toBe(habit.name);
+
+      const getResponse2 = await request(app.getHttpServer())
+        .get(`/habits/${id}`)
+        .expect(200);
+
+      const {
+        name: finalName,
+        category: finalCategory,
+        frequency: finalFrequency,
+      } = getResponse2.body;
+
+      expect(finalName).toBe(updatedName);
+      expect(finalCategory).toBe(habit.category);
+      expect(finalFrequency).toBe('weekly');
+
+      await request(app.getHttpServer()).delete(`/habits/${id}`).expect(204);
+      await request(app.getHttpServer()).get(`/habits/${id}`).expect(404);
     });
   });
 

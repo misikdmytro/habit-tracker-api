@@ -15,10 +15,10 @@ export class Habit {
   @Prop({ required: true, index: true })
   frequency: HabitFrequency;
 
-  @Prop({ default: Date.now })
+  @Prop({ required: true, index: -1 })
   createdAt: Date;
 
-  @Prop({ default: Date.now })
+  @Prop({ required: true })
   updatedAt: Date;
 }
 

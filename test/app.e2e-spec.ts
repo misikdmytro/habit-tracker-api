@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import mongoose from 'mongoose';
 import * as request from 'supertest';
+import { v4 as uuidv4 } from 'uuid';
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
@@ -26,21 +27,23 @@ describe('AppController (e2e)', () => {
 
   describe('/habits (POST', () => {
     it('should return 201', async () => {
+      const habit = {
+        name: uuidv4(),
+        category: uuidv4(),
+        frequency: 1,
+      };
+
       const response = await request(app.getHttpServer())
         .post('/habits')
-        .send({
-          name: 'Test Habit',
-          category: 'Test Category',
-          frequency: 1,
-        })
+        .send(habit)
         .expect(201);
 
       const { id, name, category, frequency, createdAt, updatedAt } =
         response.body;
 
       expect(id).toBeDefined();
-      expect(name).toBe('Test Habit');
-      expect(category).toBe('Test Category');
+      expect(name).toBe(habit.name);
+      expect(category).toBe(habit.category);
       expect(frequency).toBe('weekly');
       expect(createdAt).toBeDefined();
       expect(updatedAt).toBeDefined();
@@ -199,13 +202,15 @@ describe('AppController (e2e)', () => {
 
   describe('combined', () => {
     it('should create a habit and get it', async () => {
+      const habit = {
+        name: uuidv4(),
+        category: uuidv4(),
+        frequency: 1,
+      };
+
       const createResponse = await request(app.getHttpServer())
         .post('/habits')
-        .send({
-          name: 'Test Habit',
-          category: 'Test Category',
-          frequency: 1,
-        })
+        .send(habit)
         .expect(201);
 
       const { id, createdAt, updatedAt } = createResponse.body;
@@ -216,8 +221,8 @@ describe('AppController (e2e)', () => {
 
       const { name, category, frequency } = getResponse.body;
 
-      expect(name).toBe('Test Habit');
-      expect(category).toBe('Test Category');
+      expect(name).toBe(habit.name);
+      expect(category).toBe(habit.category);
       expect(frequency).toBe('weekly');
 
       const getAllResponse1 = await request(app.getHttpServer())
@@ -236,13 +241,13 @@ describe('AppController (e2e)', () => {
       const { habits: habits2 } = getAllResponse2.body;
 
       expect(habits2.length).toBe(1);
-      const habit = habits2[0];
-      expect(habit.name).toBe('Test Habit');
-      expect(habit.category).toBe('Test Category');
-      expect(habit.frequency).toBe('weekly');
-      expect(habit.id).toBe(id);
-      expect(habit.createdAt).toBe(createdAt);
-      expect(habit.updatedAt).toBe(updatedAt);
+      const result = habits2[0];
+      expect(result.name).toBe(habit.name);
+      expect(result.category).toBe(habit.category);
+      expect(result.frequency).toBe('weekly');
+      expect(result.id).toBe(id);
+      expect(result.createdAt).toBe(createdAt);
+      expect(result.updatedAt).toBe(updatedAt);
     });
   });
 

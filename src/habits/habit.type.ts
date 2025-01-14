@@ -7,7 +7,9 @@ import {
   Matches,
   Max,
   Min,
+  Validate,
 } from 'class-validator';
+import { IsDateOnly } from './../utils/validation';
 
 export enum HabitFrequency {
   DAILY = 0,
@@ -135,6 +137,17 @@ export class UpdateHabitByIdDto {
   frequency?: HabitFrequency;
 }
 
+export class TrackHabitDto {
+  @ApiProperty({
+    example: '2021-01-01',
+    description: 'The date to track the habit',
+    required: true,
+  })
+  @IsNotEmpty()
+  @Validate(IsDateOnly)
+  date: string;
+}
+
 export class HabitDto {
   id: string;
   name: string;
@@ -142,6 +155,12 @@ export class HabitDto {
   frequency: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export class HabitLogDto {
+  id: string;
+  habitId: string;
+  date: string;
 }
 
 export class GetHabitResponse {

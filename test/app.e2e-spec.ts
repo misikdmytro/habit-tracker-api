@@ -302,6 +302,93 @@ describe('e2e', () => {
       });
     });
 
+    describe('/habits/:id/track (POST)', () => {
+      it('should return 404', async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/habits/${nonExistentId}/track`)
+          .send({ date: '2021-01-01' })
+          .expect(404);
+
+        const { message } = response.body;
+
+        expect(message).toBe('Habit not found');
+      });
+
+      const invalidRequests = [
+        {
+          name: 'invalid id',
+          id: 'invalid',
+          requestBody: {
+            date: '2021-01-01',
+          },
+          responseBody: {
+            message: ['id must match /^[0-9a-fA-F]{24}$/ regular expression'],
+            error: 'Bad Request',
+            statusCode: 400,
+          },
+        },
+        {
+          name: 'invalid date (1)',
+          id: nonExistentId,
+          requestBody: {
+            date: 'invalid',
+          },
+          responseBody: {
+            message: ['date must be in the format YYYY-MM-DD'],
+            error: 'Bad Request',
+            statusCode: 400,
+          },
+        },
+        {
+          name: 'invalid date(2)',
+          id: nonExistentId,
+          requestBody: {
+            date: '2021-13-01',
+          },
+          responseBody: {
+            message: ['date must be in the format YYYY-MM-DD'],
+            error: 'Bad Request',
+            statusCode: 400,
+          },
+        },
+        {
+          name: 'invalid date(3)',
+          id: nonExistentId,
+          requestBody: {
+            date: '2021-01-32',
+          },
+          responseBody: {
+            message: ['date must be in the format YYYY-MM-DD'],
+            error: 'Bad Request',
+            statusCode: 400,
+          },
+        },
+        {
+          name: 'invalid date(4)',
+          id: nonExistentId,
+          requestBody: {
+            date: '2021-01-01T00:00:00.000Z',
+          },
+          responseBody: {
+            message: ['date must be in the format YYYY-MM-DD'],
+            error: 'Bad Request',
+            statusCode: 400,
+          },
+        },
+      ];
+
+      invalidRequests.forEach(({ name, id, requestBody, responseBody }) => {
+        it(`should return 400 (${name})`, async () => {
+          const response = await request(app.getHttpServer())
+            .post(`/habits/${id}/track`)
+            .send(requestBody)
+            .expect(400);
+
+          expect(response.body).toEqual(responseBody);
+        });
+      });
+    });
+
     describe('combined', () => {
       it('should create a habit and get it', async () => {
         const habit = {
@@ -373,6 +460,22 @@ describe('e2e', () => {
         expect(finalName).toBe(updatedName);
         expect(finalCategory).toBe(habit.category);
         expect(finalFrequency).toBe('weekly');
+
+        const trackResponse = await request(app.getHttpServer())
+          .post(`/habits/${id}/track`)
+          .send({ date: '2021-01-01' })
+          .expect(200);
+
+        const { id: trackId, habitId, date } = trackResponse.body;
+
+        expect(trackId).toBeDefined();
+        expect(habitId).toBe(id);
+        expect(date).toBe('2021-01-01');
+
+        await request(app.getHttpServer())
+          .delete(`/habits/${id}/track`)
+          .send({ date: '2021-01-01' })
+          .expect(204);
 
         await request(app.getHttpServer()).delete(`/habits/${id}`).expect(204);
         await request(app.getHttpServer()).get(`/habits/${id}`).expect(404);

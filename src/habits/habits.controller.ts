@@ -16,6 +16,7 @@ import {
   CreateHabitDto,
   GetHabitByIdDto,
   GetHabitsDto,
+  TrackHabitDto,
   UpdateHabitByIdDto,
 } from './habit.type';
 import { HabitsService } from './habits.service';
@@ -191,6 +192,78 @@ export class HabitsController {
     const result = await this.habitsService.delete(dto.id);
     if (!result) {
       res.status(404).json({ message: 'Habit not found' }).send();
+      return;
+    }
+
+    res.status(204).send();
+  }
+
+  @Post(':id/track')
+  @ApiResponse({
+    status: 200,
+    description: 'Habit has been successfully tracked.',
+    schema: {
+      properties: {
+        id: { type: 'string' },
+        habitId: { type: 'string' },
+        date: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error.',
+  })
+  @ApiOperation({ summary: 'Track a habit' })
+  async track(
+    @Param() dto: GetHabitByIdDto,
+    @Body() body: TrackHabitDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.habitsService.track(dto.id, body);
+    if (!result) {
+      res.status(404).json({ message: 'Habit not found' }).send();
+      return;
+    }
+
+    res.status(200).json(result).send();
+  }
+
+  @Delete(':id/track')
+  @HttpCode(204)
+  @ApiResponse({
+    status: 204,
+    description: 'Habit tracking has been successfully deleted.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error.',
+  })
+  @ApiOperation({ summary: 'Delete a habit tracking' })
+  async deleteTrack(
+    @Param() dto: GetHabitByIdDto,
+    @Body() body: TrackHabitDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.habitsService.deleteTrack(dto.id, body);
+    if (!result) {
+      res.status(404).json({ message: 'Habit track not found' }).send();
       return;
     }
 

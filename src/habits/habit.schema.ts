@@ -3,6 +3,7 @@ import { HydratedDocument } from 'mongoose';
 import { HabitFrequency } from './habit.type';
 
 export type HabitDocument = HydratedDocument<Habit>;
+export type HabitLogDocument = HydratedDocument<HabitLog>;
 
 @Schema()
 export class Habit {
@@ -22,4 +23,14 @@ export class Habit {
   updatedAt: Date;
 }
 
+@Schema()
+export class HabitLog {
+  @Prop({ required: true, index: true })
+  habitId: string;
+
+  @Prop({ required: true, type: Date })
+  date: string;
+}
+
 export const HabitSchema = SchemaFactory.createForClass(Habit);
+export const HabitLogSchema = SchemaFactory.createForClass(HabitLog);

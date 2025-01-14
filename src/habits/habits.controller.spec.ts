@@ -2,7 +2,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Habit } from './habit.schema';
+import { Habit, HabitLog } from './habit.schema';
 import { HabitsController } from './habits.controller';
 import { HabitsService } from './habits.service';
 
@@ -23,6 +23,10 @@ describe('HabitsController', () => {
         HabitsService,
         {
           provide: getModelToken(Habit.name),
+          useValue: Model,
+        },
+        {
+          provide: getModelToken(HabitLog.name),
           useValue: Model,
         },
         {

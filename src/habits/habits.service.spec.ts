@@ -2,13 +2,15 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { v4 as uuidv4 } from 'uuid';
-import { Habit } from './habit.schema';
+import { Habit, HabitLog } from './habit.schema';
 import { HabitFrequency } from './habit.type';
 import { HabitsService } from './habits.service';
 
 describe('HabitsService', () => {
   let service: HabitsService;
+
   const mockHabitModel: any = jest.fn();
+  const mockHabitLogModel: any = jest.fn();
 
   beforeEach(async () => {
     const mockLogger = {
@@ -24,6 +26,10 @@ describe('HabitsService', () => {
         {
           provide: getModelToken(Habit.name),
           useValue: mockHabitModel,
+        },
+        {
+          provide: getModelToken(HabitLog.name),
+          useValue: mockHabitLogModel,
         },
         {
           provide: WINSTON_MODULE_PROVIDER,
@@ -189,6 +195,10 @@ describe('HabitsService', () => {
       exec: jest.fn().mockResolvedValue({}),
     });
 
+    mockHabitLogModel.deleteMany = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue({}),
+    });
+
     const result = await service.delete('id');
 
     expect(result).toBe(true);
@@ -200,6 +210,74 @@ describe('HabitsService', () => {
     });
 
     const result = await service.delete('id');
+
+    expect(result).toBe(false);
+  });
+
+  it('should track a habit', async () => {
+    const habit = {
+      _id: {
+        toHexString() {
+          return uuidv4();
+        },
+      },
+      name: uuidv4(),
+      category: uuidv4(),
+      frequency: HabitFrequency.DAILY,
+    };
+
+    mockHabitModel.findById = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(habit),
+    });
+
+    const habitLog = {
+      _id: {
+        toHexString() {
+          return uuidv4();
+        },
+      },
+      habitId: habit._id.toHexString(),
+      date: '2021-01-01',
+      save: jest.fn(),
+    };
+
+    mockHabitLogModel.mockReturnValue({
+      save: jest.fn().mockResolvedValue(habitLog),
+    });
+
+    const result = await service.track('id', { date: '2021-01-01' });
+
+    expect(result.id).toBeDefined();
+    expect(result.habitId).toBe(habitLog.habitId);
+    expect(result.date).toBe(habitLog.date);
+  });
+
+  it('should return null when habit not found', async () => {
+    mockHabitModel.findById = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    });
+
+    const result = await service.track('id', { date: '2021-01-01' });
+
+    expect(result).toBeNull();
+  });
+
+  it('should delete track', async () => {
+    mockHabitLogModel.findOneAndDelete = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue({}),
+    });
+
+    const result = await service.deleteTrack('id', { date: '2021-01-01' });
+
+    expect(result).toBe(true);
+  });
+
+  it('should return false when habit tracking not found', async () => {
+    mockHabitLogModel.findOneAndDelete = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    });
+
+    const result = await service.deleteTrack('id', { date: '2021-01-01' });
 
     expect(result).toBe(false);
   });

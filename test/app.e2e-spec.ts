@@ -12,7 +12,7 @@ describe('e2e', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
-          envFilePath: ['.env', `.env.${process.env.NODE_ENV}`],
+          envFilePath: ['.env'],
         }),
         AppModule,
       ],

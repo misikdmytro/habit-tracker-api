@@ -1,31 +1,39 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { HabitsModule } from './habits/habits.module';
-import { StatsModule } from './stats/stats.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
-    WinstonModule.forRoot({
-      level: process.env.LOG_LEVEL || 'debug',
-      transports: [
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.ms(),
-          ),
-        }),
-      ],
-    }),
     ConfigModule.forRoot({
       envFilePath: ['.env', `.env.${process.env.NODE_ENV}`],
     }),
-    MongooseModule.forRoot(process.env.MONGO_URI),
+    WinstonModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        level: configService.get('LOG_LEVEL'),
+        transports: [
+          new winston.transports.Console({
+            format: winston.format.combine(
+              winston.format.timestamp(),
+              winston.format.ms(),
+            ),
+          }),
+        ],
+      }),
+      inject: [ConfigService],
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get('MONGO_URI'),
+      }),
+      inject: [ConfigService],
+    }),
     HabitsModule,
-    StatsModule,
     HealthModule,
   ],
 })

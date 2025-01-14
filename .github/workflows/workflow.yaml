@@ -26,6 +26,8 @@ jobs:
         run: pnpm run lint
       - name: Test
         run: pnpm run test
+      - name: Docker Build
+        run: docker compose build
       - name: Up Docker Compose
         run: docker compose up -d
       - name: Wait for MongoDB

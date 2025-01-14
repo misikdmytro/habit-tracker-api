@@ -1,10 +1,27 @@
 services:
+  app:
+    build: .
+    ports:
+      - 8081:80
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/habit-tracker
+      - NODE_ENV=docker
+      - PORT=80
+
   mongo:
     image: mongo:5.0
     ports:
       - 27017:27017
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+        test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+        interval: 10s
+        timeout: 2s
+        retries: 5
+        start_period: 5s
 
 volumes:
   mongo-data:

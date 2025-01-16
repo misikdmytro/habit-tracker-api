@@ -8,6 +8,7 @@ import { HealthModule } from './health/health.module';
 import { OpenTelemetryModule } from '@metinseylan/nestjs-opentelemetry';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
   imports: [
@@ -36,6 +37,9 @@ import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
         ],
       }),
       inject: [ConfigService],
+    }),
+    PrometheusModule.register({
+      path: '/metrics',
     }),
     OpenTelemetryModule.forRootAsync({
       imports: [ConfigModule],

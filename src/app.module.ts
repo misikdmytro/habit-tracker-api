@@ -22,6 +22,14 @@ import { HealthModule } from './health/health.module';
               winston.format.ms(),
             ),
           }),
+          new winston.transports.File({
+            filename: 'logs/app.log',
+            format: winston.format.combine(
+              winston.format.timestamp(),
+              winston.format.ms(),
+            ),
+            maxsize: 5242880, // 5MB
+          }),
         ],
       }),
       inject: [ConfigService],

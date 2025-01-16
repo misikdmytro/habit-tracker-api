@@ -5,6 +5,8 @@ services:
       - 8081:80
     depends_on:
       - mongo
+    volumes:
+      - logs:/app/logs:rw
     environment:
       - MONGO_URI=mongodb://mongo:27017/habit-tracker
       - NODE_ENV=docker
@@ -23,5 +25,48 @@ services:
         retries: 5
         start_period: 5s
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.17.0
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5044:5044
+      - 9600:9600
+    volumes:
+      - ./configs/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./configs/logstash.yml:/usr/share/logstash/config/logstash.yml
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.0
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.17.0
+    depends_on:
+      - logstash
+    volumes:
+      - ./configs/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - logs:/logs:ro
+    command: filebeat -e --strict.perms=false
+
 volumes:
   mongo-data:
+  logs:
+  es_data:

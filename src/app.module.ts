@@ -5,6 +5,9 @@ import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { HabitsModule } from './habits/habits.module';
 import { HealthModule } from './health/health.module';
+import { OpenTelemetryModule } from '@metinseylan/nestjs-opentelemetry';
+import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 
 @Module({
   imports: [
@@ -31,6 +34,20 @@ import { HealthModule } from './health/health.module';
             maxsize: 5242880, // 5MB
           }),
         ],
+      }),
+      inject: [ConfigService],
+    }),
+    OpenTelemetryModule.forRootAsync({
+      imports: [ConfigModule],
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      useFactory: async (configService: ConfigService) => ({
+        serviceName: 'habit-tracker-api',
+        spanProcessor: new SimpleSpanProcessor(
+          new ZipkinExporter({
+            url: configService.get('ZIPKIN_URI'),
+          }),
+        ),
       }),
       inject: [ConfigService],
     }),

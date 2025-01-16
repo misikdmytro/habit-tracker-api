@@ -9,6 +9,7 @@ services:
       - logs:/app/logs:rw
     environment:
       - MONGO_URI=mongodb://mongo:27017/habit-tracker
+      - ZIPKIN_URI=http://zipkin:9411/api/v2/spans
       - NODE_ENV=docker
       - PORT=80
 
@@ -65,6 +66,15 @@ services:
       - ./configs/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - logs:/logs:ro
     command: filebeat -e --strict.perms=false
+
+  zipkin:
+    image: openzipkin/zipkin:3.4
+    container_name: zipkin
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      - ES_HOSTS=http://elasticsearch:9200
+    ports:
+      - "9411:9411"
 
 volumes:
   mongo-data:
